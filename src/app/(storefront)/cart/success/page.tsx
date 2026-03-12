@@ -1,0 +1,43 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useCartStore } from '@/lib/store'
+import { CheckCircle, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+
+export default function SuccessPage() {
+    const clearCart = useCartStore((state) => state.clearCart)
+    const searchParams = useSearchParams()
+    const sessionId = searchParams.get('session_id')
+
+    useEffect(() => {
+        // If they navigated here and have a session ID, clear the cart.
+        // Realistically you'd want to also verify this session on the server
+        // before showing success, but the Webhook handles actual DB fulfillment.
+        if (sessionId) {
+            clearCart()
+        }
+    }, [sessionId, clearCart])
+
+    return (
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-24 flex flex-col items-center justify-center text-center">
+            <CheckCircle className="w-24 h-24 text-green-500 mb-8" />
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Payment Successful!</h1>
+            <p className="text-lg text-gray-600 mb-8">
+                Thank you for your order. We've received your payment and are processing your items.
+                You will receive an email confirmation shortly.
+            </p>
+
+            <div className="flex gap-4">
+                <Link
+                    href="/"
+                    className="px-8 py-4 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition flex items-center"
+                >
+                    Continue Shopping
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
+            </div>
+        </div>
+    )
+}
