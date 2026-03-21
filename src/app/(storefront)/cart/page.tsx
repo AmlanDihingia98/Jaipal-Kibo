@@ -5,18 +5,22 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Trash2, ArrowRight, ShoppingBag, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function CartPage() {
     const { items, removeItem, updateQuantity, totalAmount, clearCart } = useCartStore()
     const [isCheckingOut, setIsCheckingOut] = useState(false)
+    const [showCodForm, setShowCodForm] = useState(false)
+    const [codDetails, setCodDetails] = useState({ name: '', phone: '', address: '', city: '', postalCode: '' })
+    const router = useRouter()
 
-    const handleCheckout = async () => {
+    const handleCheckout = async (paymentMethod: 'stripe' | 'cod') => {
         try {
             setIsCheckingOut(true)
             const res = await fetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items }),
+                body: JSON.stringify({ items, paymentMethod, codDetails: paymentMethod === 'cod' ? codDetails : undefined }),
             })
 
             const data = await res.json()
@@ -109,38 +113,97 @@ export default function CartPage() {
                 </div>
 
                 <div className="lg:col-span-4">
-                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 sticky top-24">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-6">Order Summary</h2>
+                    <div className="glass-card border-0 p-8 sticky top-28 bg-white/80 backdrop-blur-md">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
 
-                        <dl className="space-y-4 text-sm text-gray-600">
+                        <dl className="space-y-5 text-sm text-sage-800/80">
                             <div className="flex justify-between">
                                 <dt>Subtotal</dt>
-                                <dd className="font-medium text-gray-900">₹{(totalAmount() / 100).toFixed(2)}</dd>
+                                <dd className="font-semibold text-gray-900">₹{(totalAmount() / 100).toFixed(2)}</dd>
                             </div>
                             <div className="flex justify-between">
                                 <dt>Shipping</dt>
-                                <dd className="font-medium text-gray-900">Calculated at checkout</dd>
+                                <dd className="font-semibold text-gray-900">Calculated at checkout</dd>
                             </div>
-                            <div className="flex justify-between border-t border-gray-200 pt-4">
-                                <dt className="text-base font-bold text-gray-900">Total</dt>
-                                <dd className="text-base font-bold text-gray-900">₹{(totalAmount() / 100).toFixed(2)}</dd>
+                            <div className="flex justify-between border-t border-gray-100 pt-5 mt-2">
+                                <dt className="text-lg font-black text-gray-900">Total</dt>
+                                <dd className="text-lg font-black text-brand-700">₹{(totalAmount() / 100).toFixed(2)}</dd>
                             </div>
                         </dl>
 
-                        <button
-                            onClick={handleCheckout}
-                            disabled={isCheckingOut || items.length === 0}
-                            className="mt-8 w-full bg-indigo-600 !text-white hover:bg-indigo-700 disabled:bg-gray-400 py-4 px-4 rounded-xl font-semibold flex items-center justify-center transition"
-                        >
-                            {isCheckingOut ? (
-                                <>Processing... <Loader2 className="w-5 h-5 ml-2 animate-spin" /></>
-                            ) : (
-                                <>Checkout with Stripe <ArrowRight className="w-5 h-5 ml-2" /></>
-                            )}
-                        </button>
+                        <div className="mt-8 space-y-3">
+                            <button
+                                onClick={() => handleCheckout('stripe')}
+                                disabled={isCheckingOut || items.length === 0}
+                                className="w-full bg-brand-600 !text-white hover:bg-brand-500 disabled:bg-sage-200 py-4 px-4 rounded-xl font-bold flex items-center justify-center transition-all duration-300 shadow-[0_4px_14px_0_rgba(22,163,74,0.39)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.23)] hover:-translate-y-0.5 active:scale-[0.98] disabled:shadow-none disabled:hover:translate-y-0"
+                            >
+                                {isCheckingOut ? (
+                                    <>Processing... <Loader2 className="w-5 h-5 ml-2 animate-spin" /></>
+                                ) : (
+                                    <>Pay with Stripe <ArrowRight className="w-5 h-5 ml-2" /></>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setShowCodForm(true)}
+                                disabled={isCheckingOut || items.length === 0}
+                                className="w-full bg-white text-brand-800 border-2 border-brand-200 hover:border-brand-500 hover:bg-brand-50 disabled:bg-sage-50 disabled:border-sage-100 disabled:text-sage-800/40 py-3.5 px-4 rounded-xl font-bold flex items-center justify-center transition-all duration-300"
+                            >
+                                Cash on Delivery
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* COD Modal Form */}
+            {showCodForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                        <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-gray-900">Shipping Details</h3>
+                            <button onClick={() => setShowCodForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                        </div>
+                        <div className="p-6">
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    handleCheckout('cod')
+                                }}
+                                className="space-y-4"
+                            >
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                    <input required type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" value={codDetails.name} onChange={e => setCodDetails({ ...codDetails, name: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                    <input required type="tel" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" value={codDetails.phone} onChange={e => setCodDetails({ ...codDetails, phone: e.target.value })} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                                    <textarea required rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" value={codDetails.address} onChange={e => setCodDetails({ ...codDetails, address: e.target.value })}></textarea>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                        <input required type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" value={codDetails.city} onChange={e => setCodDetails({ ...codDetails, city: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                                        <input required type="text" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" value={codDetails.postalCode} onChange={e => setCodDetails({ ...codDetails, postalCode: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div className="mt-8">
+                                    <button type="submit" disabled={isCheckingOut} className="w-full bg-brand-600 !text-white hover:bg-brand-500 py-4 rounded-xl font-bold transition-all duration-300 shadow-[0_4px_14px_0_rgba(22,163,74,0.39)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.23)] hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:shadow-none disabled:hover:translate-y-0">
+                                        {isCheckingOut ? 'Processing...' : 'Confirm Order'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

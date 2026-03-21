@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function POST(req: Request) {
     try {
-        const { items } = await req.json()
+        const { items, paymentMethod = 'stripe', codDetails } = await req.json()
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -26,20 +27,87 @@ export async function POST(req: Request) {
             }
         )
 
-        const { data: { user } } = await supabase.auth.getUser()
+        let { data: { user } } = await supabase.auth.getUser()
 
-        // Format line items for Stripe
-        const lineItems = items.map((item: any) => ({
-            price_data: {
-                currency: 'inr',
-                product_data: {
-                    name: item.name,
-                    images: item.image_url ? [item.image_url] : [],
+        // If no user is found, silently create a background guest user to satisfy the database Foreign Key
+        if (!user) {
+            const supabaseAdmin = createSupabaseAdminClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!
+            )
+
+            const dummyEmail = `guest_${Date.now()}_${Math.random().toString(36).substring(7)}@guest.jaipalkibo.system`
+
+            const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+                email: dummyEmail,
+                password: 'GuestPassword123!',
+                email_confirm: true
+            })
+
+            if (createError || !newUser.user) {
+                console.error('Failed to create guest user', createError)
+                return NextResponse.json({ error: 'Failed to initialize guest checkout' }, { status: 500 })
+            }
+
+            user = newUser.user
+        }
+
+        let totalAmount = 0;
+
+        // Format line items for Stripe (if applicable)
+        const lineItems = items.map((item: any) => {
+            totalAmount += item.price * item.quantity;
+            return {
+                price_data: {
+                    currency: 'inr',
+                    product_data: {
+                        name: item.name,
+                        images: item.image_url ? [item.image_url] : [],
+                    },
+                    unit_amount: item.price, // Already in cents
                 },
-                unit_amount: item.price, // Already in cents
-            },
+                quantity: item.quantity,
+            }
+        })
+
+        // Create the pending order in Supabase
+        const { data: order, error: orderError } = await supabase
+            .from('orders')
+            .insert({
+                user_id: user.id,
+                stripe_session_id: paymentMethod === 'stripe' ? 'pending_stripe' : `cod_${Date.now()}`,
+                total_amount: totalAmount,
+                status: paymentMethod === 'cod' ? 'processing' : 'pending',
+                ...(paymentMethod === 'cod' && codDetails ? { shipping_details: codDetails } : {})
+            })
+            .select()
+            .single()
+
+        if (orderError) {
+            console.error('Order creation error:', orderError)
+            return NextResponse.json({ error: `Failed to create pending order: ${orderError.message}` }, { status: 500 })
+        }
+
+        // Insert order items
+        const orderItemsToInsert = items.map((item: any) => ({
+            order_id: order.id,
+            product_id: item.id,
             quantity: item.quantity,
+            price_at_time: item.price,
         }))
+
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItemsToInsert)
+
+        if (itemsError) {
+            console.error('Order items error:', itemsError)
+            return NextResponse.json({ error: 'Failed to insert order items' }, { status: 500 })
+        }
+
+        if (paymentMethod === 'cod') {
+            return NextResponse.json({ url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart/success?order_id=${order.id}` })
+        }
 
         // Create Stripe Checkout Session
         const session = await stripe.checkout.sessions.create({
@@ -49,10 +117,12 @@ export async function POST(req: Request) {
             success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart`,
             metadata: {
-                userId: user?.id || 'guest',
-                // Note: You can store the products mapping in metadata or directly in Supabase before creating this session
+                userId: user.id,
             },
         })
+
+        // Update the order with the actual stripe session ID
+        await supabase.from('orders').update({ stripe_session_id: session.id }).eq('id', order.id)
 
         return NextResponse.json({ url: session.url })
     } catch (error: any) {

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { LayoutDashboard, Package, LogOut, ArrowLeft } from 'lucide-react'
+import { LayoutDashboard, Package, LogOut, ArrowLeft, ShoppingBag } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
@@ -21,6 +21,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     <Link href="/admin/products" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition">
                         <Package className="w-5 h-5 mr-3 text-gray-400" />
                         Products
+                    </Link>
+                    <Link href="/admin/orders" className="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition">
+                        <ShoppingBag className="w-5 h-5 mr-3 text-gray-400" />
+                        Orders
                     </Link>
                 </nav>
 

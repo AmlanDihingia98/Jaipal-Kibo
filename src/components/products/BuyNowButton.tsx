@@ -48,7 +48,7 @@ export default function BuyNowButton({ product }: BuyNowButtonProps) {
         <button
             onClick={handleBuyNow}
             disabled={isPending}
-            className={`w-full flex items-center justify-center py-3 px-4 rounded-md text-sm font-semibold transition-all bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed`}
+            className={`w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 bg-brand-600 text-white hover:bg-brand-500 shadow-[0_4px_14px_0_rgba(22,163,74,0.39)] hover:shadow-[0_6px_20px_rgba(22,163,74,0.23)] hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none`}
         >
             {isPending ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />

@@ -51,11 +51,7 @@ export async function addToDBCart(prevState: any, formData: FormData) {
     )
 
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            return { message: 'You must be logged in to sync your cart to the server database.', success: false }
-        }
+        const { data: { user } } = await supabase.auth.getUser()
 
         // Verify product exists & check stock.
         const { data: product, error: productError } = await supabase
@@ -72,11 +68,13 @@ export async function addToDBCart(prevState: any, formData: FormData) {
             return { message: `Only ${product.stock} items left in stock.`, success: false }
         }
 
-        // In a real application, you'd insert into a server-side carts table here.
-        // E.g.: await supabase.from('cart_items').upsert({ user_id: user.id, product_id: ... })
+        if (user) {
+            // In a real application, you'd insert into a server-side carts table here.
+            // E.g.: await supabase.from('cart_items').upsert({ user_id: user.id, product_id: ... })
 
-        // Trigger Incremental Static Regeneration (ISR) to ensure UI correctly reflects stock changes
-        revalidatePath('/(storefront)', 'layout')
+            // Trigger Incremental Static Regeneration (ISR) to ensure UI correctly reflects stock changes
+            revalidatePath('/(storefront)', 'layout')
+        }
 
         return { message: 'Successfully added to cart!', success: true }
 

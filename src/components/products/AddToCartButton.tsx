@@ -51,10 +51,10 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
         <button
             onClick={handleAddToCart}
             disabled={isPending || success}
-            className={`w-full flex items-center justify-center py-3 px-4 rounded-md text-sm font-semibold transition-all
+            className={`w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300
         ${success
-                    ? 'bg-green-500 text-white'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98]'
+                    ? 'bg-green-500 text-white shadow-md'
+                    : 'bg-brand-100 text-brand-800 hover:bg-brand-200 active:scale-[0.98]'
                 } disabled:opacity-75 disabled:cursor-not-allowed`}
         >
             {isPending ? (
