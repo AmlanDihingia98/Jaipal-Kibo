@@ -11,8 +11,8 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-20 sm:h-24 items-center justify-between">
                         <div className="flex items-center">
-                            <Link href="/">
-                                <Image src="/new-logo.png" alt="Jaipal Kibo Logo" width={160} height={160} className="object-contain h-20 sm:h-24 w-auto scale-110 sm:scale-125 origin-left" priority />
+                            <Link href="/" className="flex items-center">
+                                <Image src="/new-logo.png" alt="Jaipal Kibo Logo" width={160} height={160} className="object-contain h-14 sm:h-16 w-auto transition-transform hover:scale-105" priority />
                             </Link>
                         </div>
                         <div className="flex items-center gap-4">
