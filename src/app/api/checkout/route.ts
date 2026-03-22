@@ -7,6 +7,7 @@ import { cookies } from 'next/headers'
 export async function POST(req: Request) {
     try {
         const { items, paymentMethod = 'stripe', codDetails } = await req.json()
+        const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
         }
 
         if (paymentMethod === 'cod') {
-            return NextResponse.json({ url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart/success?order_id=${order.id}` })
+            return NextResponse.json({ url: `${origin}/cart/success?order_id=${order.id}` })
         }
 
         // Create Stripe Checkout Session
@@ -114,8 +115,8 @@ export async function POST(req: Request) {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/cart`,
+            success_url: `${origin}/cart/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${origin}/cart`,
             metadata: {
                 userId: user.id,
             },
