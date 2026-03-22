@@ -3,12 +3,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
+
+function getAdminClient() {
+    return createSupabaseAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+}
+
 export async function getAdminOrders() {
-    const supabase = await createClient()
+    const supabaseAdmin = getAdminClient()
 
     // Query orders along with the user's email if possible, and their order items
-    // Using a simple fetch for now since we don't have user profiles joined in the DB easily
-    const { data: orders, error } = await supabase
+    const { data: orders, error } = await supabaseAdmin
         .from('orders')
         .select(`
             *,
@@ -30,9 +38,9 @@ export async function getAdminOrders() {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
-    const supabase = await createClient()
+    const supabaseAdmin = getAdminClient()
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from('orders')
         .update({ status })
         .eq('id', orderId)
