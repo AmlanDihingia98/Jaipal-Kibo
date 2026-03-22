@@ -29,13 +29,13 @@ export async function POST(req: Request) {
 
         let { data: { user } } = await supabase.auth.getUser()
 
+        const supabaseAdmin = createSupabaseAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
         // If no user is found, silently create a background guest user to satisfy the database Foreign Key
         if (!user) {
-            const supabaseAdmin = createSupabaseAdminClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.SUPABASE_SERVICE_ROLE_KEY!
-            )
-
             const dummyEmail = `guest_${Date.now()}_${Math.random().toString(36).substring(7)}@guest.jaipalkibo.system`
 
             const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -70,8 +70,8 @@ export async function POST(req: Request) {
             }
         })
 
-        // Create the pending order in Supabase
-        const { data: order, error: orderError } = await supabase
+        // Create the pending order in Supabase using Admin client to bypass RLS for guests
+        const { data: order, error: orderError } = await supabaseAdmin
             .from('orders')
             .insert({
                 user_id: user.id,
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
             price_at_time: item.price,
         }))
 
-        const { error: itemsError } = await supabase
+        const { error: itemsError } = await supabaseAdmin
             .from('order_items')
             .insert(orderItemsToInsert)
 
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
         })
 
         // Update the order with the actual stripe session ID
-        await supabase.from('orders').update({ stripe_session_id: session.id }).eq('id', order.id)
+        await supabaseAdmin.from('orders').update({ stripe_session_id: session.id }).eq('id', order.id)
 
         return NextResponse.json({ url: session.url })
     } catch (error: any) {
