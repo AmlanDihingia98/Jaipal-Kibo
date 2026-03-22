@@ -82,3 +82,46 @@ export async function deleteProduct(id: string) {
     revalidatePath('/(admin)/products', 'page')
     revalidatePath('/(storefront)', 'layout')
 }
+
+export async function getDashboardStats() {
+    const supabase = await getAdminSupabase()
+
+    try {
+        // 1. Total Revenue (Sum of 'completed' orders)
+        // Since Supabase doesn't easily support SUM in standard select without RPC, we query completed orders and reduce.
+        const { data: revenueData } = await supabase
+            .from('orders')
+            .select('total_amount')
+            .eq('status', 'completed')
+
+        const totalRevenue = revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0
+
+        // 2. Active Orders (Count of 'pending' or 'processing')
+        const { count: activeOrders } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['pending', 'processing'])
+
+        // 3. Products in Catalog
+        const { count: totalProducts } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+
+        // 4. Recent Orders (Last 5)
+        const { data: recentOrders } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5)
+
+        return {
+            totalRevenue,
+            activeOrders: activeOrders || 0,
+            totalProducts: totalProducts || 0,
+            recentOrders: recentOrders || []
+        }
+    } catch (err) {
+        console.error('Error fetching dashboard stats:', err)
+        return null
+    }
+}

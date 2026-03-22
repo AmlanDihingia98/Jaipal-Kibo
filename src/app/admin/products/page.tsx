@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Plus, Edit, Trash2 } from 'lucide-react'
+import { Plus, Edit, Trash2, Package } from 'lucide-react'
 import Image from 'next/image'
 import DeleteProductButton from './DeleteProductButton'
 
@@ -40,53 +40,79 @@ export default async function AdminProductsPage() {
             <div className="mt-8 flow-root">
                 <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                     <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-                        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-300">
-                                <thead className="bg-gray-50">
+                        <div className="overflow-hidden shadow-sm ring-1 ring-gray-200 sm:rounded-xl">
+                            <table className="min-w-full divide-y divide-gray-200 bg-white">
+                                <thead className="bg-gray-50/50">
                                     <tr>
-                                        <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Product</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Price</th>
-                                        <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Stock</th>
-                                        <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                                            <span className="sr-only">Actions</span>
+                                        <th scope="col" className="py-4 pl-4 pr-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider sm:pl-6">Product Details</th>
+                                        <th scope="col" className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
+                                        <th scope="col" className="px-3 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Inventory Status</th>
+                                        <th scope="col" className="relative py-4 pl-3 pr-4 sm:pr-6 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            Actions
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
+                                <tbody className="divide-y divide-gray-100 italic-none">
                                     {products?.map((product) => (
-                                        <tr key={product.id}>
-                                            <td className="whitespace-nowrap py-5 pl-4 pr-3 text-sm sm:pl-6">
+                                        <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="whitespace-nowrap py-5 pl-4 pr-3 sm:pl-6">
                                                 <div className="flex items-center">
-                                                    <div className="h-11 w-11 flex-shrink-0 relative overflow-hidden rounded-md bg-gray-100 border border-gray-200">
+                                                    <div className="h-12 w-12 flex-shrink-0 relative overflow-hidden rounded-lg bg-gray-100 border border-gray-200">
                                                         {product.image_url ? (
-                                                            <Image className="object-cover" src={product.image_url} alt="" fill sizes="44px" />
+                                                            <Image className="object-cover" src={product.image_url} alt="" fill sizes="48px" />
                                                         ) : (
-                                                            <div className="w-full h-full bg-gray-200" />
+                                                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                                <Package className="w-5 h-5 text-gray-400" />
+                                                            </div>
                                                         )}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="font-medium text-gray-900 truncate max-w-[200px]">{product.name}</div>
+                                                        <div className="font-bold text-gray-900 truncate max-w-[240px]">{product.name}</div>
+                                                        <div className="text-xs text-gray-500 mt-0.5 font-mono">ID: {product.id.slice(0, 8)}...</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                                                ₹{(product.price / 100).toFixed(2)}
+                                            <td className="whitespace-nowrap px-3 py-5 text-sm font-bold text-gray-900">
+                                                ₹{(product.price / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td className="whitespace-nowrap px-3 py-5 text-sm text-gray-500">
-                                                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${product.stock > 0 ? 'bg-green-50 text-green-700 ring-green-600/20' : 'bg-red-50 text-red-700 ring-red-600/10'}`}>
-                                                    {product.stock}
-                                                </span>
+                                            <td className="whitespace-nowrap px-3 py-5 text-sm">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`inline-flex items-center w-fit rounded-full px-2.5 py-0.5 text-xs font-bold border ${
+                                                        product.stock > 10 
+                                                            ? 'bg-green-50 text-green-700 border-green-100' 
+                                                            : product.stock > 0 
+                                                                ? 'bg-yellow-50 text-yellow-700 border-yellow-100' 
+                                                                : 'bg-red-50 text-red-700 border-red-100'
+                                                    }`}>
+                                                        {product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 ml-0.5">{product.stock} units available</span>
+                                                </div>
                                             </td>
                                             <td className="relative whitespace-nowrap py-5 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                <div className="flex justify-end gap-3">
+                                                <div className="flex justify-end gap-2">
+                                                    <Link 
+                                                        href={`/admin/products/${product.id}/edit`}
+                                                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
                                                     <DeleteProductButton id={product.id} />
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
-                                    {products?.length === 0 && (
+                                    {(!products || products.length === 0) && (
                                         <tr>
-                                            <td colSpan={4} className="py-12 text-center text-gray-500 text-sm">No products found. Add one above!</td>
+                                            <td colSpan={4} className="py-20 text-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="bg-gray-50 p-4 rounded-full mb-4">
+                                                        <Package className="w-8 h-8 text-gray-300" />
+                                                    </div>
+                                                    <p className="text-gray-900 font-bold">No products found</p>
+                                                    <p className="text-gray-500 text-sm mt-1 max-w-xs">Start building your catalog by adding your first product using the button above.</p>
+                                                </div>
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>

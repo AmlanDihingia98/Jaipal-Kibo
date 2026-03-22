@@ -1,5 +1,6 @@
 import { getAdminOrders, updateOrderStatus } from '@/actions/orders'
 import { revalidatePath } from 'next/cache'
+import OrderDetailsDialog from '@/components/admin/OrderDetailsDialog'
 
 export default async function AdminOrdersPage() {
     const orders = await getAdminOrders()
@@ -51,25 +52,28 @@ export default async function AdminOrdersPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <form action={handleStatusChange} className="flex items-center gap-2">
-                                            <input type="hidden" name="orderId" value={order.id} />
-                                            <select
-                                                name="status"
-                                                defaultValue={order.status}
-                                                className="text-sm rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            >
-                                                <option value="pending">Pending</option>
-                                                <option value="processing">Processing</option>
-                                                <option value="completed">Completed</option>
-                                                <option value="cancelled">Cancelled</option>
-                                            </select>
-                                            <button
-                                                type="submit"
-                                                className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-xs font-medium transition"
-                                            >
-                                                Update
-                                            </button>
-                                        </form>
+                                        <div className="flex items-center gap-3">
+                                            <OrderDetailsDialog order={order} />
+                                            <form action={handleStatusChange} className="flex items-center gap-2 border-l border-gray-200 pl-3">
+                                                <input type="hidden" name="orderId" value={order.id} />
+                                                <select
+                                                    name="status"
+                                                    defaultValue={order.status}
+                                                    className="text-sm rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                >
+                                                    <option value="pending">Pending</option>
+                                                    <option value="processing">Processing</option>
+                                                    <option value="completed">Completed</option>
+                                                    <option value="cancelled">Cancelled</option>
+                                                </select>
+                                                <button
+                                                    type="submit"
+                                                    className="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-xs font-medium transition"
+                                                >
+                                                    Update
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

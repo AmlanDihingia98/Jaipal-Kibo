@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
 import { LayoutDashboard, Package, LogOut, ArrowLeft, ShoppingBag } from 'lucide-react'
+import AdminMobileNav from '@/components/admin/AdminMobileNav'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
@@ -38,9 +39,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             {/* Main Content Area */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6 sm:px-8">
-                    {/* Add a logout or profile button here if full auth is implemented */}
-                    <span className="text-sm text-gray-500 mr-2">Admin Mode</span>
+                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8">
+                    <div className="flex items-center">
+                        <AdminMobileNav />
+                    </div>
+                    <div className="flex items-center">
+                        <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full mr-2 hidden sm:inline-block">Admin Mode</span>
+                        <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full sm:hidden">Admin</span>
+                    </div>
                 </header>
 
                 <div className="flex-1 overflow-auto p-6 sm:p-8">
